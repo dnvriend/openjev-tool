@@ -1,0 +1,97 @@
+[project]
+name = "openjev-tool"
+version = "0.1.0"
+description = "A Python CLI tool"
+requires-python = ">=3.14"
+authors = [
+    {name = "Dennis Vriend", email = "dvriend@ilionx.com"}
+]
+license = {text = "MIT"}
+readme = "README.md"
+keywords = ["cli", "tool"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.14",
+]
+dependencies = [
+    "typer>=0.15.0",
+]
+
+[project.optional-dependencies]
+telemetry = [
+    "opentelemetry-api>=1.20.0",
+    "opentelemetry-sdk>=1.20.0",
+    "opentelemetry-exporter-otlp>=1.20.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/dnvriend/openjev-tool"
+Repository = "https://github.com/dnvriend/openjev-tool"
+Issues = "https://github.com/dnvriend/openjev-tool/issues"
+
+[project.scripts]
+openjev-tool = "openjev_tool.cli:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.8.0",
+    "mypy>=1.7.0",
+    "pytest>=7.4.0",
+    "pytest-cov>=5.0.0",
+    "bandit>=1.7.0",
+    "pip-audit>=2.6.0",
+    "vulture>=2.10",
+    "radon>=5.1",
+    "xenon>=0.9",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+extend-exclude = ["vulture_whitelist.py"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
+ignore = []
+
+[tool.mypy]
+python_version = "3.14"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_any_generics = true
+strict = true
+
+[[tool.mypy.overrides]]
+# typer.completion exposes Shells / get_completion_script via implicit re-export.
+module = "typer.completion"
+no_implicit_reexport = false
+
+[tool.bandit]
+exclude_dirs = ["tests", ".venv", "venv"]
+skips = ["B101"]  # Skip assert_used (common in tests)
+
+[tool.coverage.run]
+source = ["openjev_tool"]
+branch = true
+# Telemetry is an optional OpenTelemetry extra (3rd-party heavy) and the CLI
+# entrypoint is thin wiring — both are exercised at runtime, not in unit tests.
+omit = [
+    "openjev_tool/telemetry/*",
+    "openjev_tool/cli.py",
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+exclude_also = [
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]
