@@ -4,8 +4,8 @@
 help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
-install: ## Install dependencies (including telemetry extras for type checking)
-	uv sync --extra telemetry
+install: ## Install dependencies (telemetry + macOS menubar extras)
+	uv sync --extra telemetry --extra menubar
 
 lint: ## Run linting with ruff
 	uv run ruff check .
@@ -57,9 +57,9 @@ run: ## Run openjev-tool (usage: make run ARGS="...")
 build: ## Build package (force rebuild)
 	uv build --force-pep517
 
-install-global: build ## Install globally with uv tool (rebuilds first to avoid cache issues)
+install-global: build ## Install globally with uv tool (rebuilds first; includes rumps for menubar)
 	-uv tool uninstall openjev-tool 2>/dev/null
-	uv tool install . --reinstall --force
+	uv tool install . --reinstall --force --with rumps
 
 uninstall-global: ## Uninstall global installation
 	uv tool uninstall openjev-tool

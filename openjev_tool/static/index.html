@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>openjev playground</title>
+<style>
+  :root {
+    --bg: #0d1117; --panel: #161b22; --border: #30363d; --fg: #e6edf3;
+    --muted: #8b949e; --accent: #58a6ff; --green: #3fb950; --red: #f85149;
+    --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 14px/1.5 system-ui, -apple-system, sans-serif;
+  }
+  header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 20px; border-bottom: 1px solid var(--border);
+  }
+  header h1 { font-size: 16px; margin: 0; }
+  .badge {
+    font: 12px var(--mono); padding: 2px 8px; border-radius: 10px;
+    border: 1px solid var(--border); color: var(--muted);
+  }
+  .badge.ok { color: var(--green); border-color: var(--green); }
+  .badge.down { color: var(--red); border-color: var(--red); }
+  main {
+    display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr);
+    gap: 16px; padding: 16px 20px; max-width: 1280px; margin: 0 auto;
+  }
+  section {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px; margin-bottom: 16px;
+  }
+  section h2 { font-size: 13px; margin: 0 0 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+  label { display: block; font-size: 12px; color: var(--muted); margin: 8px 0 4px; }
+  select, input, textarea, button {
+    width: 100%; background: var(--bg); color: var(--fg);
+    border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px;
+    font: 13px var(--mono);
+  }
+  textarea { min-height: 72px; resize: vertical; }
+  button {
+    width: auto; cursor: pointer; background: #21262d; font-weight: 600;
+  }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: #1f6feb; border-color: #1f6feb; }
+  button.mini { font-size: 11px; padding: 2px 8px; }
+  .row { display: flex; gap: 8px; align-items: end; }
+  .row > * { flex: 1; }
+  .controls { display: flex; gap: 8px; align-items: end; }
+  .controls > div { flex: 1; }
+  pre {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+    padding: 10px; overflow: auto; font: 12px var(--mono); margin: 0;
+    white-space: pre-wrap; word-break: break-word; max-height: 420px;
+  }
+  .routing { color: var(--accent); font: 12px var(--mono); margin-top: 6px; }
+  .error { color: var(--red); font: 12px var(--mono); margin-top: 6px; white-space: pre-wrap; }
+  table { width: 100%; border-collapse: collapse; font: 12px var(--mono); }
+  th, td { text-align: left; padding: 4px 6px; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: normal; }
+  .muted { color: var(--muted); }
+  .flexline { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .spin { animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<header>
+  <h1>openjev playground</h1>
+  <span id="status" class="badge">checking…</span>
+  <span id="stats-line" class="muted" style="font:12px var(--mono)"></span>
+</header>
+<main>
+  <div>
+    <section>
+      <div class="controls">
+        <div>
+          <label for="level">Level (1–10)</label>
+          <select id="level"></select>
+        </div>
+        <div>
+          <label for="model">Model</label>
+          <select id="model"><option value="">auto (router)</option></select>
+        </div>
+        <div style="flex:0">
+          <button id="invoke" class="primary">Invoke</button>
+        </div>
+      </div>
+      <p id="level-desc" class="muted" style="margin:8px 0 0"></p>
+    </section>
+    <section>
+      <h2>Input</h2>
+      <div id="form"></div>
+    </section>
+    <section>
+      <div class="flexline"><h2 style="margin:0">Output</h2></div>
+      <pre id="output">— invoke to see the typed judgment —</pre>
+      <div id="routing" class="routing"></div>
+      <div id="error" class="error"></div>
+    </section>
+    <section>
+      <h2>Replay</h2>
+      <div class="flexline">
+        <pre id="replay" style="flex:1"></pre>
+        <button id="copy" class="mini">copy</button>
+      </div>
+    </section>
+  </div>
+  <div>
+    <section>
+      <h2>Models</h2>
+      <table id="models"><thead><tr><th></th><th>id</th><th>pri</th><th>state</th></tr></thead><tbody></tbody></table>
+    </section>
+    <section>
+      <h2>Server settings</h2>
+      <div class="row">
+        <div><label for="host">host</label><input id="host"></div>
+        <div><label for="port">port</label><input id="port" type="number"></div>
+        <div style="flex:0"><button id="save-settings" class="mini">save</button></div>
+      </div>
+      <p class="muted" style="font-size:11px">Saved to ~/.config/openjev/config.json. Takes effect on next server start.</p>
+    </section>
+    <section>
+      <h2>Stats</h2>
+      <div id="stats-totals" class="muted" style="font:12px var(--mono); margin-bottom:8px"></div>
+      <table id="stats"><thead><tr><th>model</th><th>calls</th><th>err</th><th>p50</th></tr></thead><tbody></tbody></table>
+    </section>
+  </div>
+</main>
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+let LEVELS = [];
+let CURRENT = null;
+
+async function api(path, options) {
+  const response = await fetch(path, options);
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(body.detail || response.statusText);
+  return body;
+}
+
+function endpointFields(endpoint, example) {
+  const field = (name, label, value) => {
+    const text = Array.isArray(value) ? value.join("\n") : String(value ?? "");
+    const isLong = text.length > 60 || text.includes("\n");
+    return `<label>${label}</label>` +
+      (isLong
+        ? `<textarea id="f-${name}">${text}</textarea>`
+        : `<input id="f-${name}" value="${text.replace(/"/g, "&quot;")}">`);
+  };
+  const map = {
+    score: () => field("premise", "premise", example.premise) + field("hypothesis", "hypothesis", example.hypothesis),
+    noul: () => field("premise", "premise", example.premise) + field("claim", "claim", example.claim),
+    choice: () => field("question", "question", example.question) + field("options", "options (one per line)", example.options),
+    rerank: () => field("question", "query", example.question) + field("options", "candidates (one per line)", example.options),
+    grade: () => field("question", "question", example.question) + field("reference", "reference answer", example.reference) + field("candidate", "candidate answer", example.candidate),
+    ask: () => field("state", "state", example.state) +
+      `<label>questions (JSON)</label><textarea id="f-questions" style="min-height:140px">${JSON.stringify(example.questions, null, 2)}</textarea>`,
+  };
+  return (map[endpoint] || map.score)();
+}
+
+function readPayload(level) {
+  const val = (name) => $("f-" + name) ? $("f-" + name).value : "";
+  if (level.endpoint === "ask") {
+    return {
+      state: val("state"),
+      questions: JSON.parse(val("questions")),
+    };
+  }
+  const payload = {};
+  const fields = {
+    score: ["premise", "hypothesis"], noul: ["premise", "claim"],
+    choice: ["question"], rerank: ["question"], grade: ["question", "reference", "candidate"],
+  }[level.endpoint] || [];
+  for (const name of fields) payload[name] = val(name);
+  if (level.endpoint === "choice" || level.endpoint === "rerank") {
+    payload.options = val("options").split("\n").map((line) => line.trim()).filter(Boolean);
+  }
+  return payload;
+}
+
+function renderLevel() {
+  const level = LEVELS.find((candidate) => candidate.number === Number($("level").value));
+  CURRENT = level;
+  $("level-desc").textContent = `Level ${level.number} · ${level.name} → ${level.endpoint} — ${level.description}`;
+  $("form").innerHTML = endpointFields(level.endpoint, level.example);
+}
+
+function replayCommand(level, payload) {
+  const body = { level: level.number, payload };
+  if ($("model").value) body.model = $("model").value;
+  const json = JSON.stringify(body);
+  return `curl -s -X POST ${location.origin}/v1/invoke \\\n  -H 'Content-Type: application/json' \\\n  -d '${json}'`;
+}
+
+async function invoke() {
+  const button = $("invoke");
+  button.disabled = true; button.textContent = "running…";
+  $("error").textContent = ""; $("routing").textContent = "";
+  try {
+    const payload = readPayload(CURRENT);
+    const body = { level: CURRENT.number, payload };
+    if ($("model").value) body.model = $("model").value;
+    const result = await api("/v1/invoke", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    $("output").textContent = JSON.stringify(result.result, null, 2);
+    const routing = JSON.stringify(result.result, null, 2).includes('"routing"')
+      ? result.result.routing : null;
+    $("routing").textContent = routing
+      ? `routed → ${routing.model} (${routing.reason})` : "";
+    $("replay").textContent = replayCommand(CURRENT, payload);
+    refreshStats(); refreshModels();
+  } catch (error) {
+    $("error").textContent = String(error.message || error);
+  } finally {
+    button.disabled = false; button.textContent = "Invoke";
+  }
+}
+
+async function checkHealth() {
+  const badge = $("status");
+  try {
+    const health = await api("/health");
+    badge.textContent = `running · v${health.version} · up ${Math.round(health.uptime_s)}s`;
+    badge.className = "badge ok";
+  } catch {
+    badge.textContent = "server unreachable";
+    badge.className = "badge down";
+  }
+}
+
+async function refreshModels() {
+  try {
+    const { models } = await api("/v1/models");
+    const modelSelect = $("model");
+    const pinned = modelSelect.value;
+    modelSelect.innerHTML = '<option value="">auto (router)</option>' +
+      models.map((model) =>
+        `<option value="${model.id}">${model.id}${model.enabled ? "" : " (off)"}</option>`
+      ).join("");
+    modelSelect.value = pinned;
+    const tbody = $("models").querySelector("tbody");
+    tbody.innerHTML = models.map((model) => `
+      <tr>
+        <td><input type="checkbox" data-id="${model.id}" ${model.enabled ? "checked" : ""}></td>
+        <td>${model.id}</td>
+        <td>${model.priority}</td>
+        <td class="muted">${[model.loaded ? "loaded" : "", model.downloaded ? "cached" : ""].filter(Boolean).join(" ") || "—"}</td>
+      </tr>`).join("");
+    tbody.querySelectorAll("input[type=checkbox]").forEach((checkbox) => {
+      checkbox.addEventListener("change", () => toggleModel(checkbox.dataset.id, checkbox.checked));
+    });
+  } catch { /* server down; badge shows it */ }
+}
+
+async function toggleModel(modelId, enabled) {
+  try {
+    const config = await api("/v1/config");
+    for (const model of config.models) if (model.id === modelId) model.enabled = enabled;
+    await api("/v1/config", {
+      method: "PUT", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(config),
+    });
+    refreshModels();
+  } catch (error) { $("error").textContent = String(error.message || error); }
+}
+
+async function loadSettings() {
+  try {
+    const config = await api("/v1/config");
+    $("host").value = config.server.host;
+    $("port").value = config.server.port;
+  } catch { /* ignore */ }
+}
+
+async function saveSettings() {
+  try {
+    const config = await api("/v1/config");
+    config.server.host = $("host").value;
+    config.server.port = Number($("port").value);
+    await api("/v1/config", {
+      method: "PUT", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(config),
+    });
+    $("error").textContent = "";
+    loadSettings();
+  } catch (error) { $("error").textContent = String(error.message || error); }
+}
+
+async function refreshStats() {
+  try {
+    const stats = await api("/stats");
+    $("stats-totals").textContent =
+      `uptime ${Math.round(stats.uptime_s)}s · ${stats.totals.invocations} invocations · ${stats.totals.errors} errors`;
+    const rows = Object.entries(stats.models).map(([name, data]) => `
+      <tr><td>${name}</td><td>${data.count}</td><td>${data.errors}</td>
+      <td>${data.p50_ms == null ? "—" : data.p50_ms + "ms"}</td></tr>`).join("");
+    $("stats").querySelector("tbody").innerHTML = rows ||
+      '<tr><td colspan="4" class="muted">no invocations yet</td></tr>';
+  } catch { /* ignore */ }
+}
+
+async function init() {
+  try {
+    const [{ levels }, config] = await Promise.all([api("/v1/levels"), api("/v1/config")]);
+    LEVELS = levels;
+    $("level").innerHTML = levels.map((level) =>
+      `<option value="${level.number}">${level.number} · ${level.name} — ${level.endpoint}</option>`
+    ).join("");
+    $("host").value = config.server.host;
+    $("port").value = config.server.port;
+    renderLevel();
+  } catch (error) { $("error").textContent = String(error.message || error); }
+  $("level").addEventListener("change", renderLevel);
+  $("invoke").addEventListener("click", invoke);
+  $("copy").addEventListener("click", () => navigator.clipboard.writeText($("replay").textContent));
+  $("save-settings").addEventListener("click", saveSettings);
+  checkHealth(); refreshModels(); refreshStats(); loadSettings();
+  setInterval(checkHealth, 5000);
+  setInterval(refreshStats, 5000);
+}
+init();
+</script>
+</body>
+</html>

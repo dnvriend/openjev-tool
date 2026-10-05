@@ -72,8 +72,6 @@ class TelemetryConfig:
             enabled=enabled,
             service_name=os.environ.get("OTEL_SERVICE_NAME", "openjev-tool"),
             exporter_type=exporter_type,
-            otlp_endpoint=os.environ.get(
-                "OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4317"
-            ),
+            otlp_endpoint=os.environ.get("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4317"),
             otlp_insecure=otlp_insecure,
         )

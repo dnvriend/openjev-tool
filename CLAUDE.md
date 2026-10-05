@@ -161,6 +161,7 @@ The template includes a centralized logging system with progressive verbosity le
 
    logger = get_logger(__name__)
 
+
    @app.command()
    def command(
        verbose: Annotated[int, typer.Option("--verbose", "-v", count=True, help="...")] = 0,
@@ -266,9 +267,11 @@ telemetry/
 ```python
 from openjev_tool.telemetry import traced
 
+
 @traced("process_data")
 def process_data(items: list) -> dict:
     return {"count": len(items)}
+
 
 @traced(attributes={"operation.type": "batch"})
 def batch_process():

@@ -18,6 +18,11 @@ classifiers = [
 ]
 dependencies = [
     "typer>=0.15.0",
+    "torch>=2.9.0",
+    "transformers>=5.15.0",
+    "fastapi>=0.115.0",
+    "uvicorn>=0.30.0",
+    "tqdm>=4.66.0",
 ]
 
 [project.optional-dependencies]
@@ -25,6 +30,9 @@ telemetry = [
     "opentelemetry-api>=1.20.0",
     "opentelemetry-sdk>=1.20.0",
     "opentelemetry-exporter-otlp>=1.20.0",
+]
+menubar = [
+    "rumps>=0.4.0",
 ]
 
 [project.urls]
@@ -50,6 +58,7 @@ dev = [
     "vulture>=2.10",
     "radon>=5.1",
     "xenon>=0.9",
+    "types-tqdm>=4.66",
 ]
 
 [tool.ruff]
@@ -73,6 +82,11 @@ strict = true
 # typer.completion exposes Shells / get_completion_script via implicit re-export.
 module = "typer.completion"
 no_implicit_reexport = false
+
+[[tool.mypy.overrides]]
+# rumps is an optional [menubar] extra (PyObjC-based, macOS only).
+module = "rumps"
+ignore_missing_imports = true
 
 [tool.bandit]
 exclude_dirs = ["tests", ".venv", "venv"]

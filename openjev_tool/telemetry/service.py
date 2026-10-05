@@ -86,9 +86,7 @@ class TelemetryService:
                 config.exporter_type.value,
             )
         except ImportError as e:
-            logger.warning(
-                "OpenTelemetry dependencies not installed, telemetry disabled: %s", e
-            )
+            logger.warning("OpenTelemetry dependencies not installed, telemetry disabled: %s", e)
             self._config = TelemetryConfig(enabled=False)
             self._initialized = True
 
